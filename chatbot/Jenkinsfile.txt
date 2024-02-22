@@ -1,0 +1,57 @@
+pipeline {
+    agent any
+    environment {
+        SCANNER_HOME = tool 'sonar-scanner'
+    }
+    stages {
+        stage('Git-Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/your-chatbot-repo.git'
+            }
+        }
+        stage('OWAPS Dependency Check') {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./', odcInstallation: 'DC'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonar') {
+                    sh "$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=YourChatbot -Dsonar.projectName=YourChatbot"
+                }
+            }
+        }
+        stage('Docker Build & Tag Image') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker-cred', toolName: 'Docker') {
+                        dir('/path/to/your/chatbot') {
+                            sh "docker build -t your-chatbot:latest ."
+                        }
+                    }
+                }
+            }
+        }
+        stage('Trivy Docker Scan') {
+            steps {
+                sh "trivy image your-chatbot:latest"
+            }
+        }
+        stage('Docker Push Image') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker-cred', toolName: 'Docker') {
+                        sh "docker push your-chatbot:latest"
+                    }
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                // Assuming you have a script to deploy your chatbot, modify this step accordingly
+                sh "kubectl apply -f your-chatbot-deployment.yaml"
+            }
+        }
+    }
+}

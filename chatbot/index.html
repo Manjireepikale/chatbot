@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Chatbot</title>
+</head>
+<body>
+    <h1>Fitness Chatbot</h1>
+    <form action="/get_response" method="post">
+        <input type="text" name="user_input" placeholder="Enter your message...">
+        <input type="submit" value="Send">
+    </form>
+    <div id="chat-container"></div>
+
+    <script>
+        function getBotResponse() {
+            var user_input = document.querySelector('input[name="user_input"]').value;
+            var chat_container = document.getElementById("chat-container");
+            var request = new XMLHttpRequest();
+            request.open('POST', '/get_response', true);
+            request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+            request.onload = function() {
+                if (request.status >= 200 && request.status < 400) {
+                    var bot_response = document.createElement("p");
+                    bot_response.innerHTML = "Bot: " + request.responseText;
+                    chat_container.appendChild(bot_response);
+                }
+            };
+            request.send("user_input=" + user_input);
+            return false;
+        }
+    </script>
+</body>
+</html>
